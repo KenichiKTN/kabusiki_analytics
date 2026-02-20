@@ -1,0 +1,212 @@
+BPMN表示用URL
+
+https://demo.bpmn.io/
+
+BPMN.io インポート用XML
+-------------------------------------------------------------------------------------------------------------------------
+
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  id="Definitions_InvestmentBatch"
+  targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <bpmn:process id="Process_InvestmentBatch" name="投資対象銘柄選定・日次判定（As-Is）" isExecutable="false">
+
+    <!-- 月次 -->
+    <bpmn:startEvent id="StartEvent_Monthly" name="月1回バッチ起動">
+      <bpmn:timerEventDefinition id="TimerEventDefinition_Monthly" />
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="Task_M010" name="M010 全銘柄価格取得メソッド" />
+    <bpmn:serviceTask id="Task_M020" name="M020 スタイル指標演算メソッド" />
+    <bpmn:businessRuleTask id="Task_M030" name="M030 日々監視銘柄判定メソッド" />
+    <bpmn:serviceTask id="Task_UpdateM039" name="M039 投資対象銘柄マスタ更新" />
+
+    <bpmn:endEvent id="EndEvent_Monthly" name="月次終了" />
+
+    <!-- 日次 -->
+    <bpmn:startEvent id="StartEvent_Daily" name="毎日バッチ起動">
+      <bpmn:timerEventDefinition id="TimerEventDefinition_Daily" />
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="Task_M110" name="M110 対象銘柄価格取得メソッド" />
+    <bpmn:serviceTask id="Task_M120" name="M120 投資指標作成メソッド" />
+    <bpmn:businessRuleTask id="Task_M130" name="M130 指標結果判定メソッド" />
+
+    <bpmn:exclusiveGateway id="Gateway_HasTarget" name="投資対象銘柄が存在するか" />
+
+    <bpmn:serviceTask id="Task_Log" name="判定結果ログ記録" />
+    <bpmn:serviceTask id="Task_Notify" name="通知送信" />
+
+    <bpmn:endEvent id="EndEvent_Daily_NoNotify" name="日次終了（通知なし）" />
+    <bpmn:endEvent id="EndEvent_Daily_Notify" name="日次終了（通知あり）" />
+
+    <!-- 月次 Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_M_1" sourceRef="StartEvent_Monthly" targetRef="Task_M010" />
+    <bpmn:sequenceFlow id="Flow_M_2" sourceRef="Task_M010" targetRef="Task_M020" />
+    <bpmn:sequenceFlow id="Flow_M_3" sourceRef="Task_M020" targetRef="Task_M030" />
+    <bpmn:sequenceFlow id="Flow_M_4" sourceRef="Task_M030" targetRef="Task_UpdateM039" />
+    <bpmn:sequenceFlow id="Flow_M_5" sourceRef="Task_UpdateM039" targetRef="EndEvent_Monthly" />
+
+    <!-- 日次 Sequence Flows -->
+    <bpmn:sequenceFlow id="Flow_D_1" sourceRef="StartEvent_Daily" targetRef="Task_M110" />
+    <bpmn:sequenceFlow id="Flow_D_2" sourceRef="Task_M110" targetRef="Task_M120" />
+    <bpmn:sequenceFlow id="Flow_D_3" sourceRef="Task_M120" targetRef="Task_M130" />
+    <bpmn:sequenceFlow id="Flow_D_4" sourceRef="Task_M130" targetRef="Gateway_HasTarget" />
+
+    <!-- 分岐：存在する（通知あり） -->
+    <bpmn:sequenceFlow id="Flow_D_Yes" name="存在する" sourceRef="Gateway_HasTarget" targetRef="Task_Log" />
+    <bpmn:sequenceFlow id="Flow_D_Yes_2" sourceRef="Task_Log" targetRef="Task_Notify" />
+    <bpmn:sequenceFlow id="Flow_D_Yes_3" sourceRef="Task_Notify" targetRef="EndEvent_Daily_Notify" />
+
+    <!-- 分岐：存在しない（通知なし） -->
+    <bpmn:sequenceFlow id="Flow_D_No" name="存在しない" sourceRef="Gateway_HasTarget" targetRef="Task_Log" />
+    <bpmn:sequenceFlow id="Flow_D_No_2" sourceRef="Task_Log" targetRef="EndEvent_Daily_NoNotify" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_InvestmentBatch">
+    <bpmndi:BPMNPlane id="BPMNPlane_InvestmentBatch" bpmnElement="Process_InvestmentBatch">
+
+      <!-- 月次（上段） -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_Monthly" bpmnElement="StartEvent_Monthly">
+        <dc:Bounds x="140" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_M010" bpmnElement="Task_M010">
+        <dc:Bounds x="220" y="98" width="180" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_M020" bpmnElement="Task_M020">
+        <dc:Bounds x="430" y="98" width="180" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_M030" bpmnElement="Task_M030">
+        <dc:Bounds x="640" y="98" width="200" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_UpdateM039" bpmnElement="Task_UpdateM039">
+        <dc:Bounds x="870" y="98" width="220" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_Monthly" bpmnElement="EndEvent_Monthly">
+        <dc:Bounds x="1120" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_M_1" bpmnElement="Flow_M_1">
+        <di:waypoint x="176" y="138" />
+        <di:waypoint x="220" y="138" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_M_2" bpmnElement="Flow_M_2">
+        <di:waypoint x="400" y="138" />
+        <di:waypoint x="430" y="138" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_M_3" bpmnElement="Flow_M_3">
+        <di:waypoint x="610" y="138" />
+        <di:waypoint x="640" y="138" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_M_4" bpmnElement="Flow_M_4">
+        <di:waypoint x="840" y="138" />
+        <di:waypoint x="870" y="138" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_M_5" bpmnElement="Flow_M_5">
+        <di:waypoint x="1090" y="138" />
+        <di:waypoint x="1120" y="138" />
+      </bpmndi:BPMNEdge>
+
+      <!-- 日次（下段） -->
+      <bpmndi:BPMNShape id="Shape_StartEvent_Daily" bpmnElement="StartEvent_Daily">
+        <dc:Bounds x="140" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_M110" bpmnElement="Task_M110">
+        <dc:Bounds x="220" y="278" width="200" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_M120" bpmnElement="Task_M120">
+        <dc:Bounds x="450" y="278" width="200" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_M130" bpmnElement="Task_M130">
+        <dc:Bounds x="680" y="278" width="200" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Gateway_HasTarget" bpmnElement="Gateway_HasTarget" isMarkerVisible="true">
+        <dc:Bounds x="920" y="293" width="50" height="50" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_Log" bpmnElement="Task_Log">
+        <dc:Bounds x="1010" y="278" width="180" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_Task_Notify" bpmnElement="Task_Notify">
+        <dc:Bounds x="1220" y="238" width="180" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_Daily_Notify" bpmnElement="EndEvent_Daily_Notify">
+        <dc:Bounds x="1430" y="260" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Shape_EndEvent_Daily_NoNotify" bpmnElement="EndEvent_Daily_NoNotify">
+        <dc:Bounds x="1220" y="340" width="36" height="36" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_1" bpmnElement="Flow_D_1">
+        <di:waypoint x="176" y="318" />
+        <di:waypoint x="220" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_2" bpmnElement="Flow_D_2">
+        <di:waypoint x="420" y="318" />
+        <di:waypoint x="450" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_3" bpmnElement="Flow_D_3">
+        <di:waypoint x="650" y="318" />
+        <di:waypoint x="680" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_4" bpmnElement="Flow_D_4">
+        <di:waypoint x="880" y="318" />
+        <di:waypoint x="920" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <!-- Yes（通知あり） -->
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Yes" bpmnElement="Flow_D_Yes">
+        <di:waypoint x="945" y="318" />
+        <di:waypoint x="1010" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Yes_2" bpmnElement="Flow_D_Yes_2">
+        <di:waypoint x="1190" y="318" />
+        <di:waypoint x="1220" y="278" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_Yes_3" bpmnElement="Flow_D_Yes_3">
+        <di:waypoint x="1400" y="278" />
+        <di:waypoint x="1430" y="278" />
+      </bpmndi:BPMNEdge>
+
+      <!-- No（通知なし） -->
+      <bpmndi:BPMNEdge id="Edge_Flow_D_No" bpmnElement="Flow_D_No">
+        <di:waypoint x="945" y="318" />
+        <di:waypoint x="1010" y="318" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Edge_Flow_D_No_2" bpmnElement="Flow_D_No_2">
+        <di:waypoint x="1190" y="318" />
+        <di:waypoint x="1238" y="358" />
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>
