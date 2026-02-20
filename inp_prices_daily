@@ -1,0 +1,41 @@
+＜＜テーブルの作成＞＞
+
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+
+CREATE TABLE IF NOT EXISTS inp_prices_daily (
+  symbol_code INTEGER NOT NULL,      -- 例: 4151
+  ticker      TEXT    NOT NULL,      -- 例: 4151.T
+  date        TEXT    NOT NULL,      -- YYYY-MM-DD
+
+  open        REAL,
+  high        REAL,
+  low         REAL,
+  close       REAL,
+  volume      INTEGER,
+
+  source      TEXT,                 -- 例: 'yfinance'
+  loaded_at   TEXT DEFAULT (datetime('now')),
+
+  PRIMARY KEY (symbol_code, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_inp_prices_date   ON inp_prices_daily(date);
+CREATE INDEX IF NOT EXISTS idx_inp_prices_ticker ON inp_prices_daily(ticker);
+
+-------------------------------------------------------------------------------------------
+## reset_inp_prices.sql
+
+BEGIN TRANSACTION;
+DELETE FROM inp_prices_daily;
+COMMIT;
+
+
+-------------------------------------------------------------------------------------------
+# insert_inp_prices.sql
+
+INSERT INTO inp_prices_daily (
+  symbol_code, ticker, date,
+  open, high, low, close, volume,
+  source
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
